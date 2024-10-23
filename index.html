@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <script src = "https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-300 min-h-screen flex items-center justify-center p-10">
+    
+    <div class="max-w-xl w-full bg-white rounded-xl p-6 shadow-2xl">
+        <div class="bg-gray-300 rounded-lg p-4">
+        <!-- Header -->
+    <div class="bg-gray-100 p-5 border-b rounded-lg" >  
+        <div class="space-y-2">
+            <div class="flex items-center space-x-2">
+                <span class="text-gray-500 ">Your peer ID is:</span>
+                <span id="pid" class="font-semibold text-blue-600"></span>
+            </div>
+        
+    <div
+    class="flex gap-4 mt-4"
+    >
+    <input 
+    class="bg-gray-200 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+    placeholder="Enter friend's peer ID..."
+    type="text" name="fid" id="fid">
+
+    
+    
+    <button
+     class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors "
+    onclick="connect()">
+    Connect
+    </button>
+    <br>
+    </div>
+    </div>  
+</div> 
+
+    <div class="p-4"> 
+       <!--Chat section  -->
+        <h3 class=" text-2xl font-semibold text-gray-700 mb-4">Chat</h3>
+        
+        
+        <div id="chat" class="h-96 rounded-lg bg-gray-200 overflow-y-auto scrollbar-hide space-y-2 mb-4"></div> 
+        
+        <!-- message section -->
+        <div class=" flex justify-between max-w-xl w-full gap-4">
+        
+            <input class="border bg-gray-200 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-screen" placeholder="Type message..." type="text" name="msg" id="msg">
+        
+        <button
+         class="px-6 text-white py-2 bg-blue-500 rounded-md hover:bg-blue-700 transition-colors flex items-center" 
+          onclick="send()">
+            <span>Send</span>
+        </button>
+
+        </div>
+
+    </div>
+
+</div>
+</div>
+
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
+    <script>
+        var myPeerId = window.prompt("Enter your peer ID");
+        var peer = new Peer(myPeerId);
+        document.getElementById('pid').innerText = myPeerId;
+        var conn;
+
+        function connect() {
+            var fid = document.getElementById('fid').value;
+            conn = peer.connect(fid);
+            conn.on('open', function(){
+                conn.send('Connected!!!');
+                addMessage('System' ,"Connected successfully!", 'system');
+            });
+        }
+
+        function addMessage(sender,message,type = 'normal'){
+            const chat = document.getElementById('chat');
+            const messageDiv = document.createElement('div');
+
+            if(type === "system"){
+                messageDiv.className ='text-center text-sm text-gray-500';
+                messageDiv.textContentn= message;
+            }
+            else{
+               const isMe = sender === myPeerId;
+               messageDiv.className =`flex ${isMe ? 'justify-end':'justify-start'}`;
+               messageDiv.innerHTML = `
+                <div class="${isMe ? 'bg-blue-500 text-white': 'bg-gray-300 text-gray-800'}
+                px-4 py-2 m-4 rounded-lg max-w-[80%]">
+                <div class="text-sm ${isMe ? "text-blue-100" : "text-gray-500"} mb-1">${sender}</div>
+                <div>${message}</div></div>
+                
+               `;
+            }
+
+            chat.appendChild(messageDiv);
+            // chat.scrollTop = chat.scrollHeight;
+        }
+
+        peer.on('connection', function(conn) {
+            conn.on('data', function(data){
+                if(document.getElementById('fid').value === ""){
+                    document.getElementById('fid').value = conn.peer;
+                    connect();
+                }
+                // document.getElementById('chat').innerHTML += `${document.getElementById('fid').value} : ` + data + '<br>';
+
+                addMessage(conn.peer, data);
+            });
+        });
+
+        function send() {
+            var msg = document.getElementById('msg').value;
+            // document.getElementById('chat').innerHTML += `${myPeerId} : ` + msg + '<br>';
+            addMessage(myPeerId, msg);
+            conn.send(msg);
+            document.getElementById('msg').value = '';
+        }
+
+
+        //enter key support
+        document.getElementById('msg').addEventListener('keypress',function(e){
+            if(e.key ==='Enter' ){
+                e.preventDefault();
+                send();
+            }
+        })
+
+    </script>
+
+</body>
+</html>
